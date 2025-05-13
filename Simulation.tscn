@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://i1bqkc5isa2h"]
+[gd_scene load_steps=7 format=3 uid="uid://i1bqkc5isa2h"]
 
 [ext_resource type="Script" uid="uid://c8lgv3ydd241v" path="res://simulation_manager.gd" id="1_2iqi2"]
 [ext_resource type="Script" uid="uid://htk4l4clhd0e" path="res://world_renderer.gd" id="2_t6gs0"]
 [ext_resource type="Texture2D" uid="uid://vucu0qdri4hl" path="res://Sprite-0001.png" id="3_lfd1m"]
+[ext_resource type="Script" uid="uid://gryufbkcpiwh" path="res://camera_controls.gd" id="4_lfd1m"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_uobxk"]
 texture = ExtResource("3_lfd1m")
@@ -34,3 +35,6 @@ script = ExtResource("2_t6gs0")
 tile_set = SubResource("TileSet_mpm82")
 rendering_quadrant_size = 32
 format = 2
+
+[node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("4_lfd1m")

@@ -24,7 +24,6 @@ func _ready() -> void:
 # Callback when the Simulation Manager signals that the world is ready.
 func _on_simulation_world_ready(world_data, generated_families) -> void:
 	render_world(world_data, generated_families)
-	print("Rendered world based on generated data.")
 
 func render_world(world_data: Array, generated_families: Array) -> void:
 	print("Rendering")

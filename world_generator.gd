@@ -102,8 +102,8 @@ func _attempt_world_generation() -> void:
 func generate_world() -> void:
 	generate_map()
 	generate_families(5)     # Create a starting group of 5 families.
-	emit_signal("world_generated", map_data, families)
 	print("World generated. Map dimensions: ", map_width, "x", map_height)
+	emit_signal("world_generated", map_data, families)
 	#print("Number of family groups: ", families.size())
 
 
@@ -122,15 +122,15 @@ func generate_map() -> void:
 			var tile_dict = {}  # Dictionary containing tile properties.
 
 			# Determine tile type:
-			if norm_val < 0.2:
+			if norm_val < 0.25:
 				tile_dict["type"] = TILE_WATER
-			elif norm_val < 0.85:
+			elif norm_val < 0.65:
 				tile_dict["type"] = TILE_GRASS
 				# For grass tiles, add a smooth height variation.
-				var grass_raw = grass_noise.get_noise_2d(world_x, world_y)
-				var grass_norm = (grass_raw + 1.0) / 2.0
-				# Map noise value to a realistic grass height, in meters.
-				tile_dict["grass_height"] = lerp(0.2, 1.0, grass_norm)
+				#var grass_raw = grass_noise.get_noise_2d(world_x, world_y)
+				#var grass_norm = (grass_raw + 1.0) / 2.0
+				## Map noise value to a realistic grass height, in meters.
+				#tile_dict["grass_height"] = lerp(0.2, 1.0, grass_norm)
 			else:
 				# For high noise values, choose between hill and rock.
 				tile_dict["type"] = TILE_HILL if randf() < 0.5 else TILE_ROCK
@@ -166,17 +166,66 @@ func generate_family_member(member_id: int, potential_names: Array) -> RefCounte
 func generate_families(family_count: int) -> void:
 	families.clear()
 	var attempts = 0
-	var max_attempts = family_count * 10   # Prevent potential infinite loops.
-	
+	var max_attempts = family_count * 20   # Increased max_attempts slightly
+
 	# Dummy data for generating names
 	var potential_names = ["John", "Mary", "Alex", "Emma", "Robert", "Olivia", "James", "Sophia", "William", "Ava"]
-	
+
+	var first_family_pos: Vector2 = Vector2.ZERO
+	var cluster_radius: float = 25.0 # Max distance from the first family for other families (in tiles)
+	var placement_attempts_within_radius: int = 15 # How many times to try placing near the first family
+
 	# Place families only on grass tiles.
 	while families.size() < family_count and attempts < max_attempts:
 		attempts += 1
-		var x = randi() % map_width
-		var y = randi() % map_height
-		if map_data[x][y]["type"] == TILE_GRASS:
+		var x: int
+		var y: int
+		var found_spot_for_family: bool = false
+
+		if families.size() == 0:
+			# Place the first family randomly to establish a cluster center
+			var first_family_placement_attempts = 0
+			while not found_spot_for_family and first_family_placement_attempts < 100:
+				first_family_placement_attempts += 1
+				x = randi() % map_width
+				y = randi() % map_height
+				if map_data[x][y]["type"] == TILE_GRASS:
+					first_family_pos = Vector2(x, y)
+					found_spot_for_family = true
+			if not found_spot_for_family:
+				printerr("WorldGenerator: Could not place the first family on a grass tile after many attempts.")
+				# Optionally, could try to place it anywhere if strict clustering start fails
+				# For now, we'll let the main loop attempt counter handle further retries if needed.
+				continue # Skip to next attempt in the main while loop
+		else:
+			# Place subsequent families near the first family
+			for _i in range(placement_attempts_within_radius):
+				var angle = randf_range(0, 2 * PI)
+				var radius = randf_range(0, cluster_radius)
+				x = int(round(first_family_pos.x + cos(angle) * radius))
+				y = int(round(first_family_pos.y + sin(angle) * radius))
+
+				# Clamp to map bounds
+				x = clamp(x, 0, map_width - 1)
+				y = clamp(y, 0, map_height - 1)
+
+				if map_data[x][y]["type"] == TILE_GRASS:
+					found_spot_for_family = true
+					break
+			
+			if not found_spot_for_family:
+				# Fallback: if couldn't find a spot in the cluster, try a completely random spot for this attempt
+				var fallback_attempts = 0
+				while not found_spot_for_family and fallback_attempts < 5: # Try a few random spots
+					fallback_attempts += 1
+					x = randi() % map_width
+					y = randi() % map_height
+					if map_data[x][y]["type"] == TILE_GRASS:
+						found_spot_for_family = true
+				if not found_spot_for_family:
+					continue # Skip to next attempt in the main while loop if fallback also fails
+
+		if found_spot_for_family:
 			# Decide on a random number of family members (e.g., between 2 and 6).
 			var num_members = 2 + randi() % 5
 			var members = []
@@ -204,3 +253,6 @@ func generate_families(family_count: int) -> void:
 				"status": "traveling"
 			}
 			families.append(family)
+
+	if families.size() < family_count:
+		print("WorldGenerator: Warning - Could not place all requested families. Placed: ", families.size(), " of ", family_count)
