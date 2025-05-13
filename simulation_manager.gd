@@ -8,6 +8,7 @@ signal tick_updated(tick)
 signal simulation_saved(file_path)
 signal simulation_loaded(file_path)
 signal simulation_world_ready(world_data, generated_families)
+signal initial_camera_focus_ready(focus_position_pixels) # New signal for camera
 
 # --- Simulation Tick Variables ---
 var tick_interval: float = 0.0166666666666667 # Seconds per simulation tick.
@@ -19,6 +20,7 @@ var tick_count: int = 0                      # Global tick counter.
 # They can be simple data dictionaries or instances of custom classes.
 var entities := {}
 var world_data = []
+var world_generator_node # To store reference to world_generator
 
 # --- Stubbed Heavy Simulation Data ---
 var wind_simulation_data := {}
@@ -32,13 +34,13 @@ var thread_running: bool = true       # Control flag to stop the heavy simulatio
 func _ready() -> void:
 	# Instance the WorldGenerator.
 	var WorldGeneratorScene = preload("res://world_generator.gd")
-	var world_generator = WorldGeneratorScene.new()
+	world_generator_node = WorldGeneratorScene.new() # Assign to member variable
 	
 	# Connect to the world_generated signal.
-	world_generator.connect("world_generated", _on_world_generated)
+	world_generator_node.connect("world_generated", _on_world_generated)
 	
 	# Add it as a child so it gets its own _ready() call too.
-	add_child(world_generator)
+	add_child(world_generator_node)
 	
 	# Kick off world generation is now handled by WorldGenerator waiting for signals
 	# world_generator.generate_world() # This line should remain commented or removed
@@ -54,15 +56,46 @@ func _ready() -> void:
 func _on_world_generated(generated_map_data, generated_families) -> void:
 	world_data = generated_map_data
 	
-	for family in generated_families:
-		for human in family["members"]:
-			entities.set(human.id, human)
-			#var creature = human.get_component("creature")
-			#print('Human loaded: ' + creature.display_name + ' ' + str(creature.age) + ' years old ' + creature.gender)
+	for family_idx in range(generated_families.size()):
+		var family = generated_families[family_idx]
+
+		# Check if family is a Dictionary before trying to access its methods/keys
+		if typeof(family) != TYPE_DICTIONARY:
+			printerr("SimulationManager: Expected family to be a Dictionary, but got type ", typeof(family), " for family at index ", family_idx, ". Value: ", family)
+			continue # Skip this iteration
+
+		# Ensure family structure is as expected, especially after previous edits
+		if not family.has("members") or not family.has("anchor_x") or not family.has("anchor_y"):
+			printerr("SimulationManager: Family data structure is unexpected for family index ", family_idx, ". Family data: ", family)
+			continue
+
+		for human_entity in family["members"]: # human_entity is an EntityClass instance
+			# EntityClass instances always have an 'id' property.
+			# We check if this ID is valid for use (e.g., not the default -1 if -1 is considered uninitialized).
+			# Assuming IDs assigned by world_generator are always >= 0.
+			if typeof(human_entity) == TYPE_OBJECT and "id" in human_entity: # Robust check
+				if human_entity.id != -1: 
+					entities[human_entity.id] = human_entity
+				else:
+					printerr("SimulationManager: Human entity in family %d has an invalid/uninitialized ID (-1). Entity: %s" % [family_idx, human_entity])
+			else:
+				printerr("SimulationManager: Item in family[%d].members is not a valid entity object or lacks an ID. Type: %s, Value: %s" % [family_idx, typeof(human_entity), human_entity])
 
 	print("World loaded into Simulation Manager:")
 	#print("Map size: ", world_data.size(), " x ", world_data[0].size())
 	#print("Number of families: ", generated_families.size())
+
+	# Set initial camera focus on the first family
+	if generated_families.size() > 0:
+		var first_family = generated_families[0]
+		if first_family.has("anchor_x") and first_family.has("anchor_y") and world_generator_node:
+			var tile_s = world_generator_node.tile_size
+			var focus_x = first_family.anchor_x * tile_s + tile_s / 2.0
+			var focus_y = first_family.anchor_y * tile_s + tile_s / 2.0
+			emit_signal("initial_camera_focus_ready", Vector2(focus_x, focus_y))
+			print("SimulationManager: Emitted initial_camera_focus_ready for position: ", Vector2(focus_x, focus_y))
+		else:
+			printerr("SimulationManager: Could not set initial camera focus. First family data missing or world_generator_node not set.")
 	
 	# Emit a signal to notify the rest of the system.
 	emit_signal("simulation_world_ready", world_data, generated_families)

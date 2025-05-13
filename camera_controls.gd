@@ -1,4 +1,4 @@
-# RimworldCamera.gd
+# Camera.gd
 extends Camera2D
 
 @export_category("Panning")
@@ -18,10 +18,31 @@ var _is_dragging: bool = false
 var _drag_start_mouse_pos: Vector2
 var _drag_start_camera_pos: Vector2
 
+var _initial_focus_set: bool = false # Flag to ensure focus is set only once
+
 
 func _ready() -> void:
     # This ensures _unhandled_input is called for mouse events, etc.
     set_process_unhandled_input(true)
+
+    # Attempt to connect to the SimulationManager's signal for initial focus
+    # Assuming SimulationManager is a sibling or easily accessible. Adjust path if needed.
+    var sim_manager = get_node_or_null("/root/SimulationManager") # Common path for autoloads/singletons
+    if sim_manager and sim_manager.has_signal("initial_camera_focus_ready"):
+        var error_connect = sim_manager.connect("initial_camera_focus_ready", _on_initial_camera_focus_ready)
+        if error_connect == OK:
+            print("Camera: Connected to initial_camera_focus_ready.")
+        else:
+            printerr("Camera: Failed to connect to initial_camera_focus_ready. Error: ", error_connect)
+    else:
+        printerr("Camera: Could not find SimulationManager or it lacks initial_camera_focus_ready signal.")
+
+
+func _on_initial_camera_focus_ready(focus_position_pixels: Vector2) -> void:
+    if not _initial_focus_set:
+        global_position = focus_position_pixels
+        _initial_focus_set = true
+        print("Camera: Initial focus set to ", focus_position_pixels)
 
 
 func _unhandled_input(event: InputEvent) -> void:
