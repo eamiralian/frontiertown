@@ -45,10 +45,18 @@ script = ExtResource("2_t6gs0")
 tile_set = SubResource("TileSet_mpm82")
 rendering_quadrant_size = 32
 format = 2
+layer_0/name = "Terrain"
 layer_0/tile_data = PackedInt32Array(-2031655, 1, 0)
-layer_1/name = "Layer1"
+layer_1/name = "Creatures"
+layer_2/name = "Droplets"
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("4_lfd1m")
 min_zoom = 0.1
 max_zoom = 10.0
+
+[node name="UIManager" type="Node" parent="."]
+
+[node name="Label" type="Label" parent="UIManager"]
+offset_right = 40.0
+offset_bottom = 23.0

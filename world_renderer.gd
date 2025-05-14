@@ -9,6 +9,11 @@ const TERRAIN_ATLAS_SOURCE_ID = 0
 const CREATURE_ATLAS_SOURCE_ID = 1 # Assuming creature atlas is source_id 1
 const TERRAIN_LAYER = 0 # Terrain on the bottom layer
 const CREATURE_LAYER = 1 # Creatures on a layer above terrain
+const DROPLET_LAYER = 2 # Layer for visualizing erosion droplets
+
+@export_group("Droplet Visualization")
+@export var water_tile_source_id: int = 0 # Set this to the source ID of your water tile in the TileSet (often 0 for the main atlas)
+@export var water_tile_atlas_coords: Vector2i = Vector2i(0, 6) # Set this to the atlas coordinates of your water tile (e.g., TILE_WATER's coords)
 
 func _ready() -> void:
 	# Get our TileMap child. In the scene, name it "TileMap".
@@ -36,6 +41,7 @@ func render_world(world_data: Array, generated_families: Array) -> void:
 	if tile_map: # Good practice to check if tile_map is valid
 		tile_map.clear_layer(TERRAIN_LAYER) 
 		tile_map.clear_layer(CREATURE_LAYER)
+		tile_map.clear_layer(DROPLET_LAYER) # Clear the droplet layer as well
 	else:
 		printerr("WorldRenderer: tile_map is null!")
 		return
@@ -91,3 +97,25 @@ func render_world(world_data: Array, generated_families: Array) -> void:
 				printerr("WorldRenderer: Found a family member entity without a creature component.")
 
 	print("Rendering complete.")
+
+func update_terrain_tile_visual(tile_x: int, tile_y: int, new_tile_type: int) -> void:
+	if tile_map:
+		# Assuming tile_type is a flat index in an atlas of a known width
+		var atlas_width = 4 # Replace with your atlas\'s width in tiles, same as in render_world
+		var atlas_coords = Vector2i(new_tile_type % atlas_width, new_tile_type / atlas_width)
+		tile_map.set_cell(TERRAIN_LAYER, Vector2i(tile_x, tile_y), TERRAIN_ATLAS_SOURCE_ID, atlas_coords)
+	else:
+		printerr("WorldRenderer: TileMap node not found, cannot update terrain tile visual.")
+
+func set_droplet_tile(tile_x: int, tile_y: int) -> void:
+	if tile_map:
+		# Ensure tile coordinates are within reasonable map bounds if necessary, though generator should handle this.
+		tile_map.set_cell(DROPLET_LAYER, Vector2i(tile_x, tile_y), water_tile_source_id, water_tile_atlas_coords)
+	else:
+		printerr("WorldRenderer: TileMap node not found, cannot set droplet tile.")
+
+func clear_entire_droplet_layer() -> void:
+	if tile_map:
+		tile_map.clear_layer(DROPLET_LAYER)
+	else:
+		printerr("WorldRenderer: TileMap node not found, cannot clear droplet layer.")

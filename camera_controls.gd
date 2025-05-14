@@ -108,10 +108,10 @@ func _process(delta: float) -> void:
         global_position += pan_direction.normalized() * pan_speed * delta
 
     # Keyboard Zooming
-    if Input.is_action_just_pressed("camera_zoom_in_key"):
-        _apply_zoom(1.0 - zoom_speed_keys)
-    if Input.is_action_just_pressed("camera_zoom_out_key"):
-        _apply_zoom(1.0 + zoom_speed_keys)
+    # if Input.is_action_just_pressed("camera_zoom_in_key"):
+    #     _apply_zoom(1.0 - zoom_speed_keys)
+    # if Input.is_action_just_pressed("camera_zoom_out_key"):
+    #     _apply_zoom(1.0 + zoom_speed_keys)
 
 
 func _apply_zoom(zoom_factor: float) -> void:
