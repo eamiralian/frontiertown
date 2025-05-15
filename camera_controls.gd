@@ -1,7 +1,11 @@
 # Camera.gd
 extends Camera2D
 
+# Signal to notify UI elements when zoom changes
+signal zoom_changed(zoom_level)
+
 @export_category("Panning")
+var SHIFT_SPEED_MULTIPLIER: float = 10.0      # Multiplier for panning speed when shift is held
 @export var pan_speed: float = 600.0            # Speed of keyboard/edge panning
 @export var screen_edge_margin: int = 35        # Pixel margin for screen edge panning
 @export var screen_edge_pan_enabled: bool = false
@@ -20,14 +24,11 @@ var _drag_start_camera_pos: Vector2
 
 var _initial_focus_set: bool = false # Flag to ensure focus is set only once
 
-
 func _ready() -> void:
     # This ensures _unhandled_input is called for mouse events, etc.
     set_process_unhandled_input(true)
 
-    # Attempt to connect to the SimulationManager's signal for initial focus
-    # Assuming SimulationManager is a sibling or easily accessible. Adjust path if needed.
-    var sim_manager = get_node_or_null("/root/SimulationManager") # Common path for autoloads/singletons
+    var sim_manager = get_node_or_null("/root/SimulationManager")
     if sim_manager and sim_manager.has_signal("initial_camera_focus_ready"):
         var error_connect = sim_manager.connect("initial_camera_focus_ready", _on_initial_camera_focus_ready)
         if error_connect == OK:
@@ -104,8 +105,9 @@ func _process(delta: float) -> void:
     # Apply Panning
     if pan_direction != Vector2.ZERO:
         # Normalize to prevent faster diagonal movement
+        var speed_multiplier = SHIFT_SPEED_MULTIPLIER if Input.is_key_pressed(KEY_SHIFT) else 1.0
         # Panning speed is independent of zoom for keyboard/edge, adjust with 'delta'
-        global_position += pan_direction.normalized() * pan_speed * delta
+        global_position += pan_direction.normalized() * pan_speed * delta * speed_multiplier
 
     # Keyboard Zooming
     # if Input.is_action_just_pressed("camera_zoom_in_key"):
@@ -118,3 +120,6 @@ func _apply_zoom(zoom_factor: float) -> void:
     var new_zoom_value = zoom.x * zoom_factor # Assuming uniform zoom (x and y are the same)
     new_zoom_value = clamp(new_zoom_value, min_zoom, max_zoom)
     zoom = Vector2(new_zoom_value, new_zoom_value)
+    
+    emit_signal("zoom_changed", new_zoom_value)
+    emit_signal("zoom_changed", new_zoom_value)

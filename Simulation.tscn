@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://i1bqkc5isa2h"]
+[gd_scene load_steps=10 format=3 uid="uid://i1bqkc5isa2h"]
 
 [ext_resource type="Script" uid="uid://c8lgv3ydd241v" path="res://simulation_manager.gd" id="1_2iqi2"]
 [ext_resource type="Script" uid="uid://htk4l4clhd0e" path="res://world_renderer.gd" id="2_t6gs0"]
 [ext_resource type="Texture2D" uid="uid://vucu0qdri4hl" path="res://Sprite-0001.png" id="3_lfd1m"]
 [ext_resource type="Script" uid="uid://gryufbkcpiwh" path="res://camera_controls.gd" id="4_lfd1m"]
 [ext_resource type="Texture2D" uid="uid://dq4e3ppdruppr" path="res://Sprite-0002.png" id="4_uobxk"]
+[ext_resource type="Script" uid="uid://sbi6jowgg3ga" path="res://fps.gd" id="6_mpm82"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_uobxk"]
 texture = ExtResource("3_lfd1m")
@@ -21,6 +22,7 @@ texture_region_size = Vector2i(32, 32)
 1:2/0 = 0
 2:2/0 = 0
 3:2/0 = 0
+0:3/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_mpm82"]
 texture = ExtResource("4_uobxk")
@@ -57,6 +59,14 @@ max_zoom = 10.0
 
 [node name="UIManager" type="Node" parent="."]
 
-[node name="Label" type="Label" parent="UIManager"]
+[node name="UICanvasLayer" type="CanvasLayer" parent="UIManager"]
+layer = 10
+
+[node name="Label" type="Label" parent="UIManager/UICanvasLayer"]
 offset_right = 40.0
 offset_bottom = 23.0
+
+[node name="FPS" type="Label" parent="UIManager/UICanvasLayer"]
+offset_right = 40.0
+offset_bottom = 23.0
+script = ExtResource("6_mpm82")

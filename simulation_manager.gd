@@ -92,8 +92,8 @@ func _on_world_generated(generated_map_data, generated_families) -> void:
 			var tile_s = world_generator_node.tile_size
 			var focus_x = first_family.anchor_x * tile_s + tile_s / 2.0
 			var focus_y = first_family.anchor_y * tile_s + tile_s / 2.0
-			emit_signal("initial_camera_focus_ready", Vector2(focus_x, focus_y))
-			print("SimulationManager: Emitted initial_camera_focus_ready for position: ", Vector2(focus_x, focus_y))
+			#emit_signal("initial_camera_focus_ready", Vector2(focus_x, focus_y))
+			#print("SimulationManager: Emitted initial_camera_focus_ready for position: ", Vector2(focus_x, focus_y))
 		else:
 			printerr("SimulationManager: Could not set initial camera focus. First family data missing or world_generator_node not set.")
 	
